@@ -77,7 +77,7 @@ if uploaded_file:
 
         acc = accuracy_score(y_test, y_pred)
 
-        st.markdown(f"<h3 style='color:#FFFFFF;'>{name} Results</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='color:#2196F3;'>{name} Results</h3>", unsafe_allow_html=True)
         st.write("Accuracy:", round(acc, 3))
 
         with st.expander("Show Detailed Classification Report"):
