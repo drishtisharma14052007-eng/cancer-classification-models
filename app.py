@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
@@ -9,6 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
 # -------------------------------
 # Title
@@ -31,9 +33,10 @@ if uploaded_file:
     # Preprocessing Function
     # -------------------------------
     def preprocess_data(df):
-        df.replace('?', pd.NA, inplace=True)
+        df.replace('?', np.nan, inplace=True)
         df.dropna(inplace=True)
 
+        # Convert Bare_Nuclei to int if present
         if 'Bare_Nuclei' in df.columns:
             df['Bare_Nuclei'] = df['Bare_Nuclei'].astype(int)
 
@@ -44,19 +47,13 @@ if uploaded_file:
     # -------------------------------
     # Feature Selection
     # -------------------------------
-    # Exclude ID-like columns from target selection
-    excluded = ["id", "Sample_code_number"]   # add any other non-target identifiers
+    excluded = ["id", "Sample_code_number"]   # exclude identifiers
     valid_targets = [col for col in df.columns if col not in excluded]
 
-# Dropdown will only show valid targets
     target = st.selectbox("Select Target Column", valid_targets)
 
-# Define X and y
     X = df.drop(columns=[target])
-    y = df[target]
-
-
-  
+    y = df[target].astype(int)   # ensure target is numeric
 
     # -------------------------------
     # Train-Test Split
@@ -64,6 +61,13 @@ if uploaded_file:
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
+
+    # -------------------------------
+    # Scale Features (important for Logistic & KNN)
+    # -------------------------------
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
 
     st.subheader("Run Algorithms")
 
