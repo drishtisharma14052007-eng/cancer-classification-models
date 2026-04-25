@@ -15,12 +15,12 @@ from sklearn.preprocessing import StandardScaler
 # -------------------------------
 # Title
 # -------------------------------
-st.title("Machine Learning Model Comparison System")
+st.markdown("<h1 style='text-align:center; color:#4CAF50;'>📊 ML Model Comparison Dashboard</h1>", unsafe_allow_html=True)
 
 # -------------------------------
 # File Upload
 # -------------------------------
-uploaded_file = st.file_uploader("Upload Dataset", type=["csv"])
+uploaded_file = st.sidebar.file_uploader("Upload Dataset", type=["csv"])
 
 if uploaded_file:
 
@@ -36,7 +36,6 @@ if uploaded_file:
         df.replace('?', np.nan, inplace=True)
         df.dropna(inplace=True)
 
-        # Convert Bare_Nuclei to int if present
         if 'Bare_Nuclei' in df.columns:
             df['Bare_Nuclei'] = df['Bare_Nuclei'].astype(int)
 
@@ -47,13 +46,13 @@ if uploaded_file:
     # -------------------------------
     # Feature Selection
     # -------------------------------
-    excluded = ["id", "Sample_code_number"]   # exclude identifiers
+    excluded = ["id", "Sample_code_number"]
     valid_targets = [col for col in df.columns if col not in excluded]
 
-    target = st.selectbox("Select Target Column", valid_targets)
+    target = st.sidebar.selectbox("Select Target Column", valid_targets)
 
     X = df.drop(columns=[target])
-    y = df[target].astype(int)   # ensure target is numeric
+    y = df[target].astype(int)
 
     # -------------------------------
     # Train-Test Split
@@ -63,15 +62,11 @@ if uploaded_file:
     )
 
     # -------------------------------
-    # Scale Features (important for Logistic & KNN)
+    # Scale Features
     # -------------------------------
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
-
-    st.subheader("Run Algorithms")
-
-    col1, col2, col3, col4 = st.columns(4)
 
     # -------------------------------
     # Function to Train Model
@@ -82,9 +77,11 @@ if uploaded_file:
 
         acc = accuracy_score(y_test, y_pred)
 
-        st.subheader(f"{name} Results")
+        st.markdown(f"<h3 style='color:#2196F3;'>{name} Results</h3>", unsafe_allow_html=True)
         st.write("Accuracy:", round(acc, 3))
-        st.text(classification_report(y_test, y_pred))
+
+        with st.expander("Show Detailed Classification Report"):
+            st.text(classification_report(y_test, y_pred))
 
         # Confusion Matrix
         fig, ax = plt.subplots()
@@ -95,50 +92,48 @@ if uploaded_file:
         return acc
 
     # -------------------------------
-    # Buttons
+    # Tabs for Models
     # -------------------------------
-    if col1.button("Logistic"):
-        run_model(LogisticRegression(max_iter=1000), "Logistic Regression")
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Logistic", "KNN", "Decision Tree", "Random Forest", "Comparison"])
 
-    if col2.button("KNN"):
-        run_model(KNeighborsClassifier(n_neighbors=5), "KNN")
+    with tab1:
+        if st.button("Run Logistic Regression"):
+            run_model(LogisticRegression(max_iter=1000), "Logistic Regression")
 
-    if col3.button("Decision Tree"):
-        run_model(DecisionTreeClassifier(), "Decision Tree")
+    with tab2:
+        if st.button("Run KNN"):
+            run_model(KNeighborsClassifier(n_neighbors=5), "KNN")
 
-    if col4.button("Random Forest"):
-        run_model(RandomForestClassifier(n_estimators=100), "Random Forest")
+    with tab3:
+        if st.button("Run Decision Tree"):
+            run_model(DecisionTreeClassifier(), "Decision Tree")
 
-    # -------------------------------
-    # Compare All Models
-    # -------------------------------
-    if st.button("Compare All Models"):
+    with tab4:
+        if st.button("Run Random Forest"):
+            run_model(RandomForestClassifier(n_estimators=100), "Random Forest")
 
-        models = {
-            "Logistic": LogisticRegression(max_iter=1000),
-            "KNN": KNeighborsClassifier(n_neighbors=5),
-            "Decision Tree": DecisionTreeClassifier(),
-            "Random Forest": RandomForestClassifier(n_estimators=100)
-        }
+    with tab5:
+        if st.button("Compare All Models"):
+            models = {
+                "Logistic": LogisticRegression(max_iter=1000),
+                "KNN": KNeighborsClassifier(n_neighbors=5),
+                "Decision Tree": DecisionTreeClassifier(),
+                "Random Forest": RandomForestClassifier(n_estimators=100)
+            }
 
-        results = []
+            results = []
+            for name, model in models.items():
+                model.fit(X_train, y_train)
+                y_pred = model.predict(X_test)
+                results.append({"Model": name, "Accuracy": accuracy_score(y_test, y_pred)})
 
-        for name, model in models.items():
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
+            results_df = pd.DataFrame(results)
 
-            results.append({
-                "Model": name,
-                "Accuracy": accuracy_score(y_test, y_pred)
-            })
+            st.subheader("Comparison Table")
+            st.write(results_df)
 
-        results_df = pd.DataFrame(results)
-
-        st.subheader("Comparison Table")
-        st.write(results_df)
-
-        # Plot
-        fig, ax = plt.subplots()
-        ax.bar(results_df["Model"], results_df["Accuracy"])
-        ax.set_title("Model Comparison")
-        st.pyplot(fig)
+            # Attractive Chart
+            fig, ax = plt.subplots(figsize=(6,4))
+            sns.barplot(x="Accuracy", y="Model", data=results_df, palette="coolwarm", ax=ax)
+            ax.set_title("Model Comparison", fontsize=14, color="navy")
+            st.pyplot(fig)
