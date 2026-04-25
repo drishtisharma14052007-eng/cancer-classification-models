@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 # -------------------------------
 # Title
 # -------------------------------
-st.markdown("<h1 style='text-align:center; color:#4CAF50;'>📊 ML Model Comparison Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align:center; color:#FFFFFF;'>📊 ML Model Comparison Dashboard</h1>", unsafe_allow_html=True)
 
 # -------------------------------
 # File Upload
