@@ -6,7 +6,8 @@ It was built with **Python, scikit-learn, and Streamlit** to provide an interact
 ---
 
 ## 🚀 Live Demo
-👉 Try the app here: [Streamlit App]([https://your-username-your-repo.streamlit.app](https://cancer-classification-models-daefyjonguih5v2pf778bl.streamlit.app/#ml-model-comparison-dashboard))
+👉 Try the app here: [Streamlit App](https://cancer-classification-models-daefyjonguih5v2pf778bl.streamlit.app/#ml-model-comparison-dashboard)
+
 
 ---
 
