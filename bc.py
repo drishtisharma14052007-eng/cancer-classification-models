@@ -44,10 +44,19 @@ if uploaded_file:
     # -------------------------------
     # Feature Selection
     # -------------------------------
-    target = st.selectbox("Select Target Column", df.columns)
+    # Exclude ID-like columns from target selection
+    excluded = ["id", "Sample_code_number"]   # add any other non-target identifiers
+    valid_targets = [col for col in df.columns if col not in excluded]
 
+# Dropdown will only show valid targets
+    target = st.selectbox("Select Target Column", valid_targets)
+
+# Define X and y
     X = df.drop(columns=[target])
     y = df[target]
+
+
+  
 
     # -------------------------------
     # Train-Test Split
