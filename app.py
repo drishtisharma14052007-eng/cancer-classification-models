@@ -119,8 +119,8 @@ if uploaded_file1 and uploaded_file2:
     X1, y1 = df1.drop(columns=[target1]), le1.fit_transform(df1[target1])
     X2, y2 = df2.drop(columns=[target2]), le2.fit_transform(df2[target2])
 
-    X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42, stratify=y1)
-    X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.2, random_state=42, stratify=y2)
+    X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.3, random_state=42, stratify=y1)
+    X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.3, random_state=42, stratify=y2)
 
     scaler1, scaler2 = StandardScaler(), StandardScaler()
     X1_train, X1_test = scaler1.fit_transform(X1_train), scaler1.transform(X1_test)
