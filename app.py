@@ -183,4 +183,12 @@ if uploaded_file1 and uploaded_file2:
             results = []
             for name, model in models.items():
                 acc1 = run_model(model, name, X1_train, X1_test, y1_train, y1_test, "Dataset 1")
-                acc2 = run_model(model, name, X2_train, X2_test)
+                acc2 = run_model(model, name, X2_train, X2_test, y2_train, y2_test, "Dataset 2")
+                results.append({"Model": name, "Dataset 1 Accuracy": acc1, "Dataset 2 Accuracy": acc2})
+            results_df = pd.DataFrame(results)
+            st.subheader("Cross-Dataset Comparison Table")
+            st.write(results_df)
+            fig, ax = plt.subplots(figsize=(8,5))
+            results_df.plot(x="Model", kind="bar", ax=ax)
+            ax.set_title("Model Performance Across Datasets")
+            st.pyplot(fig)
