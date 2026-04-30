@@ -80,20 +80,28 @@ if uploaded_file1 and uploaded_file2:
     # Dataset Insights (EDA)
     # -------------------------------
     st.subheader("Dataset 1 Insights")
-    st.write("Class Distribution:")
-    st.bar_chart(df1.iloc[:, -1].value_counts())  # assumes target is last column
+    fig, ax = plt.subplots()
+    sns.countplot(x=df1.iloc[:, -1], palette="coolwarm", ax=ax)
+    ax.set_title("Class Distribution (Dataset 1)")
+    st.pyplot(fig)
+
     st.write("Summary Statistics:")
     st.write(df1.describe())
+
     st.write("Correlation Heatmap:")
     fig, ax = plt.subplots(figsize=(6,4))
     sns.heatmap(df1.corr(), cmap="coolwarm", ax=ax)
     st.pyplot(fig)
 
     st.subheader("Dataset 2 Insights")
-    st.write("Class Distribution:")
-    st.bar_chart(df2.iloc[:, -1].value_counts())
+    fig, ax = plt.subplots()
+    sns.countplot(x=df2.iloc[:, -1], palette="coolwarm", ax=ax)
+    ax.set_title("Class Distribution (Dataset 2)")
+    st.pyplot(fig)
+
     st.write("Summary Statistics:")
     st.write(df2.describe())
+
     st.write("Correlation Heatmap:")
     fig, ax = plt.subplots(figsize=(6,4))
     sns.heatmap(df2.corr(), cmap="coolwarm", ax=ax)
@@ -109,8 +117,8 @@ if uploaded_file1 and uploaded_file2:
     X1, y1 = df1.drop(columns=[target1]), df1[target1].astype(int)
     X2, y2 = df2.drop(columns=[target2]), df2[target2].astype(int)
 
-    X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42)
-    X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.2, random_state=42)
+    X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42, stratify=y1)
+    X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.2, random_state=42, stratify=y2)
 
     scaler1, scaler2 = StandardScaler(), StandardScaler()
     X1_train, X1_test = scaler1.fit_transform(X1_train), scaler1.transform(X1_test)
@@ -184,11 +192,18 @@ if uploaded_file1 and uploaded_file2:
             for name, model in models.items():
                 acc1 = run_model(model, name, X1_train, X1_test, y1_train, y1_test, "Dataset 1")
                 acc2 = run_model(model, name, X2_train, X2_test, y2_train, y2_test, "Dataset 2")
-                results.append({"Model": name, "Dataset 1 Accuracy": acc1, "Dataset 2 Accuracy": acc2})
+                results.append({
+                    "Model": name,
+                    "Dataset 1 Accuracy": acc1,
+                    "Dataset 2 Accuracy": acc2
+                })
+
             results_df = pd.DataFrame(results)
             st.subheader("Cross-Dataset Comparison Table")
             st.write(results_df)
+
+            # Bar chart comparison
             fig, ax = plt.subplots(figsize=(8,5))
-            results_df.plot(x="Model", kind="bar", ax=ax)
-            ax.set_title("Model Performance Across Datasets")
+            results_df.set_index("Model")[["Dataset 1 Accuracy", "Dataset 2 Accuracy"]].plot(kind="bar", ax=ax)
+            ax.set_title("Model Performance Across Datasets", fontsize=14, color="navy")
             st.pyplot(fig)
