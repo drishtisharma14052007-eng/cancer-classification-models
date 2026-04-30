@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+from collections import Counter
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, precision_score, recall_score, f1_score
@@ -29,11 +30,19 @@ uploaded_file2 = st.sidebar.file_uploader("Upload Dataset 2", type=["csv"])
 def preprocess_data(df):
     df.replace('?', np.nan, inplace=True)
     df.dropna(inplace=True)
-
     if 'Bare_Nuclei' in df.columns:
         df['Bare_Nuclei'] = df['Bare_Nuclei'].astype(int)
-
     return df
+
+# -------------------------------
+# Safe Split Function
+# -------------------------------
+def safe_split(X, y, test_size=0.2, random_state=42):
+    counts = Counter(y)
+    if all(c >= 2 for c in counts.values()) and len(counts) > 1:
+        return train_test_split(X, y, test_size=test_size, random_state=random_state, stratify=y)
+    else:
+        return train_test_split(X, y, test_size=test_size, random_state=random_state)
 
 # -------------------------------
 # Function to Train Model
@@ -56,7 +65,6 @@ def run_model(model, name, X_train, X_test, y_train, y_test, dataset_label):
     with st.expander(f"Show Detailed Classification Report ({dataset_label})"):
         st.text(classification_report(y_test, y_pred))
 
-    # Confusion Matrix
     fig, ax = plt.subplots()
     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True, cmap="Blues", ax=ax)
     ax.set_title(f"{name} Confusion Matrix ({dataset_label})")
@@ -76,19 +84,14 @@ if uploaded_file1 and uploaded_file2:
     st.subheader("Dataset 2 Preview")
     st.write(df2.head())
 
-    # -------------------------------
-    # Dataset Insights (EDA)
-    # -------------------------------
+    # Dataset Insights
     st.subheader("Dataset 1 Insights")
     fig, ax = plt.subplots()
     sns.countplot(x=df1.iloc[:, -1], palette="coolwarm", ax=ax)
     ax.set_title("Class Distribution (Dataset 1)")
     st.pyplot(fig)
-
     st.write("Summary Statistics:")
     st.write(df1.describe())
-
-    st.write("Correlation Heatmap:")
     fig, ax = plt.subplots(figsize=(6,4))
     sns.heatmap(df1.corr(), cmap="coolwarm", ax=ax)
     st.pyplot(fig)
@@ -98,11 +101,8 @@ if uploaded_file1 and uploaded_file2:
     sns.countplot(x=df2.iloc[:, -1], palette="coolwarm", ax=ax)
     ax.set_title("Class Distribution (Dataset 2)")
     st.pyplot(fig)
-
     st.write("Summary Statistics:")
     st.write(df2.describe())
-
-    st.write("Correlation Heatmap:")
     fig, ax = plt.subplots(figsize=(6,4))
     sns.heatmap(df2.corr(), cmap="coolwarm", ax=ax)
     st.pyplot(fig)
@@ -114,13 +114,12 @@ if uploaded_file1 and uploaded_file2:
     target1 = st.sidebar.selectbox("Select Target Column (Dataset 1)", valid_targets1)
     target2 = st.sidebar.selectbox("Select Target Column (Dataset 2)", valid_targets2)
 
-    # Encode targets safely
     le1, le2 = LabelEncoder(), LabelEncoder()
     X1, y1 = df1.drop(columns=[target1]), le1.fit_transform(df1[target1])
     X2, y2 = df2.drop(columns=[target2]), le2.fit_transform(df2[target2])
 
-    X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.3, random_state=42, stratify=y1)
-    X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.3, random_state=42, stratify=y2)
+    X1_train, X1_test, y1_train, y1_test = safe_split(X1, y1, test_size=0.2)
+    X2_train, X2_test, y2_train, y2_test = safe_split(X2, y2, test_size=0.2)
 
     scaler1, scaler2 = StandardScaler(), StandardScaler()
     X1_train, X1_test = scaler1.fit_transform(X1_train), scaler1.transform(X1_test)
@@ -177,6 +176,7 @@ if uploaded_file1 and uploaded_file2:
             results_df = pd.DataFrame(results)
             st.subheader("Comparison Table (Dataset 1)")
             st.write(results_df)
+
             fig, ax = plt.subplots(figsize=(6,4))
             sns.barplot(x="Accuracy", y="Model", data=results_df, palette="coolwarm", ax=ax)
             ax.set_title("Model Comparison (Dataset 1)", fontsize=14, color="navy")
@@ -192,14 +192,14 @@ if uploaded_file1 and uploaded_file2:
             }
             results = []
             for name, model in models.items():
-                # Train separately on Dataset 1
+                # Train fresh instance on Dataset 1
                 acc1 = run_model(
-                    type(model)(),  # fresh instance
+                    type(model)(),
                     name,
                     X1_train, X1_test, y1_train, y1_test,
                     "Dataset 1"
                 )
-                # Train separately on Dataset 2
+                # Train fresh instance on Dataset 2
                 acc2 = run_model(
                     type(model)(),
                     name,
@@ -216,7 +216,6 @@ if uploaded_file1 and uploaded_file2:
             st.subheader("Cross-Dataset Comparison Table")
             st.write(results_df)
 
-            # Bar chart comparison
             fig, ax = plt.subplots(figsize=(8,5))
             results_df.set_index("Model")[["Dataset 1 Accuracy", "Dataset 2 Accuracy"]].plot(kind="bar", ax=ax)
             ax.set_title("Model Performance Across Datasets", fontsize=14, color="navy")
