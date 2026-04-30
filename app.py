@@ -5,7 +5,7 @@ import seaborn as sns
 import numpy as np
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report, precision_score, recall_score, f1_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -43,9 +43,15 @@ def run_model(model, name, X_train, X_test, y_train, y_test, dataset_label):
     y_pred = model.predict(X_test)
 
     acc = accuracy_score(y_test, y_pred)
+    prec = precision_score(y_test, y_pred, average="weighted")
+    rec = recall_score(y_test, y_pred, average="weighted")
+    f1 = f1_score(y_test, y_pred, average="weighted")
 
     st.markdown(f"<h3 style='color:#2196F3;'>{name} Results ({dataset_label})</h3>", unsafe_allow_html=True)
     st.write("Accuracy:", round(acc, 3))
+    st.write("Precision:", round(prec, 3))
+    st.write("Recall:", round(rec, 3))
+    st.write("F1 Score:", round(f1, 3))
 
     with st.expander(f"Show Detailed Classification Report ({dataset_label})"):
         st.text(classification_report(y_test, y_pred))
@@ -69,6 +75,29 @@ if uploaded_file1 and uploaded_file2:
     st.write(df1.head())
     st.subheader("Dataset 2 Preview")
     st.write(df2.head())
+
+    # -------------------------------
+    # Dataset Insights (EDA)
+    # -------------------------------
+    st.subheader("Dataset 1 Insights")
+    st.write("Class Distribution:")
+    st.bar_chart(df1.iloc[:, -1].value_counts())  # assumes target is last column
+    st.write("Summary Statistics:")
+    st.write(df1.describe())
+    st.write("Correlation Heatmap:")
+    fig, ax = plt.subplots(figsize=(6,4))
+    sns.heatmap(df1.corr(), cmap="coolwarm", ax=ax)
+    st.pyplot(fig)
+
+    st.subheader("Dataset 2 Insights")
+    st.write("Class Distribution:")
+    st.bar_chart(df2.iloc[:, -1].value_counts())
+    st.write("Summary Statistics:")
+    st.write(df2.describe())
+    st.write("Correlation Heatmap:")
+    fig, ax = plt.subplots(figsize=(6,4))
+    sns.heatmap(df2.corr(), cmap="coolwarm", ax=ax)
+    st.pyplot(fig)
 
     excluded = ["id", "Sample_code_number"]
     valid_targets1 = [col for col in df1.columns if col not in excluded]
@@ -128,7 +157,13 @@ if uploaded_file1 and uploaded_file2:
             for name, model in models.items():
                 model.fit(X1_train, y1_train)
                 y_pred = model.predict(X1_test)
-                results.append({"Model": name, "Accuracy": accuracy_score(y1_test, y_pred)})
+                results.append({
+                    "Model": name,
+                    "Accuracy": accuracy_score(y1_test, y_pred),
+                    "Precision": precision_score(y1_test, y_pred, average="weighted"),
+                    "Recall": recall_score(y1_test, y_pred, average="weighted"),
+                    "F1 Score": f1_score(y1_test, y_pred, average="weighted")
+                })
             results_df = pd.DataFrame(results)
             st.subheader("Comparison Table (Dataset 1)")
             st.write(results_df)
@@ -148,12 +183,4 @@ if uploaded_file1 and uploaded_file2:
             results = []
             for name, model in models.items():
                 acc1 = run_model(model, name, X1_train, X1_test, y1_train, y1_test, "Dataset 1")
-                acc2 = run_model(model, name, X2_train, X2_test, y2_train, y2_test, "Dataset 2")
-                results.append({"Model": name, "Dataset 1 Accuracy": acc1, "Dataset 2 Accuracy": acc2})
-            results_df = pd.DataFrame(results)
-            st.subheader("Cross-Dataset Comparison Table")
-            st.write(results_df)
-            fig, ax = plt.subplots(figsize=(8,5))
-            results_df.plot(x="Model", kind="bar", ax=ax)
-            ax.set_title("Model Performance Across Datasets")
-            st.pyplot(fig)
+                acc2 = run_model(model, name, X2_train, X2_test)
