@@ -10,7 +10,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 # -------------------------------
 # Title
@@ -114,8 +114,10 @@ if uploaded_file1 and uploaded_file2:
     target1 = st.sidebar.selectbox("Select Target Column (Dataset 1)", valid_targets1)
     target2 = st.sidebar.selectbox("Select Target Column (Dataset 2)", valid_targets2)
 
-    X1, y1 = df1.drop(columns=[target1]), df1[target1].astype(int)
-    X2, y2 = df2.drop(columns=[target2]), df2[target2].astype(int)
+    # Encode targets safely
+    le1, le2 = LabelEncoder(), LabelEncoder()
+    X1, y1 = df1.drop(columns=[target1]), le1.fit_transform(df1[target1])
+    X2, y2 = df2.drop(columns=[target2]), le2.fit_transform(df2[target2])
 
     X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42, stratify=y1)
     X2_train, X2_test, y2_train, y2_test = train_test_split(X2, y2, test_size=0.2, random_state=42, stratify=y2)
@@ -190,8 +192,20 @@ if uploaded_file1 and uploaded_file2:
             }
             results = []
             for name, model in models.items():
-                acc1 = run_model(model, name, X1_train, X1_test, y1_train, y1_test, "Dataset 1")
-                acc2 = run_model(model, name, X2_train, X2_test, y2_train, y2_test, "Dataset 2")
+                # Train separately on Dataset 1
+                acc1 = run_model(
+                    type(model)(),  # fresh instance
+                    name,
+                    X1_train, X1_test, y1_train, y1_test,
+                    "Dataset 1"
+                )
+                # Train separately on Dataset 2
+                acc2 = run_model(
+                    type(model)(),
+                    name,
+                    X2_train, X2_test, y2_train, y2_test,
+                    "Dataset 2"
+                )
                 results.append({
                     "Model": name,
                     "Dataset 1 Accuracy": acc1,
