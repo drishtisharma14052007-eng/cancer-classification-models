@@ -70,3 +70,14 @@ git clone https://github.com/your-username/cancer-classification-models.git
 cd cancer-classification-models
 pip install -r requirements.txt
 streamlit run app.py
+
+
+---
+
+## 📌 Future Improvements
+- Add more ML models (SVM, XGBoost)
+- Improve UI/UX of Streamlit app
+- Add model saving/loading functionality
+- Deploy with Docker
+
+---
